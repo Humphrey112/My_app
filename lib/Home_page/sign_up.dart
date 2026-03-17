@@ -80,6 +80,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
+
                             // 2. NAVIGATOR: This uses your import and removes the yellow line
                             
                           },
