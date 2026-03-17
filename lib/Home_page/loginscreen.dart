@@ -12,6 +12,18 @@ class Loginscreen extends StatefulWidget {
 class _LoginscreenState extends State<Loginscreen> {
   bool _isPasswordHidden = true;
 
+  // 1. ADD THESE CONTROLLERS HERE
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  // Clean up controllers when the screen is closed
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -19,46 +31,46 @@ class _LoginscreenState extends State<Loginscreen> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-
-              Container(
-                width: double.infinity,
-                height: 250,
-                decoration: BoxDecoration(
+            Container(
+              width: double.infinity,
+              height: 250,
+              decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.deepOrange.shade900, Colors.deepOrange.shade400,
-                      
-                    ]
-              
-                  ),
-                  borderRadius: BorderRadius.only(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.deepOrange.shade900,
+                        Colors.deepOrange.shade400,
+                      ]),
+                  borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(120),
-                  )
-                ),
-                child:Center(
-                    child: Image.asset('assets/work.png', height: 120,width: 120,
-                fit: BoxFit.contain,)
-                
-              ),
-              ),
-
+                  )),
+              child: Center(
+                  child: Image.asset(
+                'assets/work.png',
+                height: 120,
+                width: 120,
+                fit: BoxFit.contain,
+              )),
+            ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: Column(
                 children: [
                   const SizedBox(height: 40),
-                  
+
+                  // 2. CONNECT EMAIL CONTROLLER
                   _buildTextField(
                     hint: "Email",
                     icon: Icons.email,
                     isPassword: false,
+                    controller: _emailController, // Added this
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
-                  _buildPasswordField(),
+
+                  // 3. CONNECT PASSWORD CONTROLLER
+                  _buildPasswordField(controller: _passwordController), // Added this
 
                   Align(
                     alignment: Alignment.centerRight,
@@ -76,7 +88,7 @@ class _LoginscreenState extends State<Loginscreen> {
 
                   const SizedBox(height: 15),
 
-                  // LOGIN BUTTON
+                  // LOGIN BUTTON WITH VALIDATION
                   SizedBox(
                     width: double.infinity,
                     height: 55,
@@ -87,7 +99,8 @@ class _LoginscreenState extends State<Loginscreen> {
                           colors: [Color(0xFFFF5722), Color(0xFFFF1100)],
                         ),
                         boxShadow: [
-                          BoxShadow(color: Colors.red.withOpacity(0.3),
+                          BoxShadow(
+                            color: Colors.red.withOpacity(0.3),
                             blurRadius: 10,
                             offset: const Offset(0, 5),
                           ),
@@ -95,13 +108,23 @@ class _LoginscreenState extends State<Loginscreen> {
                       ),
                       child: ElevatedButton(
                         onPressed: () {
-
-                           Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const NewsCategoryScreen (),
+                          // 4. THE VALIDATION CHECK
+                          if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter both Email and Password'),
+                                backgroundColor: Colors.red,
                               ),
                             );
+                          } else {
+                            // Only login if fields are not empty
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const NewsCategoryScreen(),
+                              ),
+                            );
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.transparent,
@@ -109,9 +132,6 @@ class _LoginscreenState extends State<Loginscreen> {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(50),
                           ),
-
-                          
-                          
                         ),
                         child: const Text(
                           "LOGIN",
@@ -159,12 +179,11 @@ class _LoginscreenState extends State<Loginscreen> {
     );
   }
 
-  // FIX: Added BorderRadius.circular(50) for perfect pill shape
-  Widget _buildPasswordField() {
+  Widget _buildPasswordField({required TextEditingController controller}) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(50), 
+        borderRadius: BorderRadius.circular(50),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -174,7 +193,8 @@ class _LoginscreenState extends State<Loginscreen> {
         ],
       ),
       child: TextField(
-        obscureText: _isPasswordHidden, 
+        controller: controller, // Added this
+        obscureText: _isPasswordHidden,
         style: const TextStyle(color: Colors.black, fontSize: 16),
         decoration: InputDecoration(
           hintText: "Password",
@@ -196,8 +216,11 @@ class _LoginscreenState extends State<Loginscreen> {
       ),
     );
   }
-
-  Widget _buildTextField({required String hint, required IconData icon, required bool isPassword}) {
+  Widget _buildTextField(
+      {required String hint,
+      required IconData icon,
+      required bool isPassword,
+      required TextEditingController controller}) { // Added controller parameter
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -209,7 +232,9 @@ class _LoginscreenState extends State<Loginscreen> {
             offset: const Offset(0, 8),
           ),
         ],
-      ),child: TextField(
+      ),
+      child: TextField(
+        controller: controller, // Added this
         obscureText: isPassword,
         style: const TextStyle(color: Colors.black, fontSize: 16),
         decoration: InputDecoration(
