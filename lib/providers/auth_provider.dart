@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' show User, FirebaseAuth;
 import 'package:flutter/material.dart';
 import 'package:get_storage/get_storage.dart';
@@ -7,7 +6,6 @@ import '../widgets/floating_snackbar.dart';
 
 class NewsAuthProvider extends ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final getStorageInstance = GetStorage();
 
   bool _isLoading = false;
@@ -22,7 +20,7 @@ class NewsAuthProvider extends ChangeNotifier {
   }
 
   // SIGN UP
-  Future<void> signUp({
+  Future<bool> signUp({
     required BuildContext context,
     required String email,
     required String password,
@@ -35,27 +33,22 @@ class NewsAuthProvider extends ChangeNotifier {
         password: password,
       );
 
-      final uid = cred.user!.uid;
+      await cred.user!.updateDisplayName(name);
 
-      // ✅ STORE USER IN FIRESTORE
-      await _db.collection('users').doc(uid).set({
-        'email': email,
-        'name': name,
-        'createdAt': DateTime.now(),
-      });
-
-      // ✅ STORE NAME LOCALLY
       _userName = name;
       getStorageInstance.write('user_name', name);
 
       await _saveToken();
 
       showSnack(context, "Account created!!!");
+
+      return true; //success
     } catch (e) {
       showSnack(context, e.toString());
-      print(e.toString().toUpperCase());
+      return false; //failure
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   // SIGN IN

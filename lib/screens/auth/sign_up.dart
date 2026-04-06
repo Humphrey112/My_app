@@ -12,23 +12,74 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  bool _isPasswordHidden = true;
-  bool _isConfirmPasswordHidden = true;
+  bool _isPassHidden = true;
+  bool _isConfirmHidden = true;
+  bool _isLoading = false; // Added for a better user experience
 
-  // 1. ALL CONTROLLERS INITIALIZED
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _usernameController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController emailCtrl = TextEditingController();
+  final TextEditingController userCtrl = TextEditingController();
+  final TextEditingController passCtrl = TextEditingController();
+  final TextEditingController confirmPassCtrl = TextEditingController();
 
   @override
   void dispose() {
-    _emailController.dispose();
-    _usernameController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
+    emailCtrl.dispose();
+    userCtrl.dispose();
+    passCtrl.dispose();
+    confirmPassCtrl.dispose();
     super.dispose();
+  }
+
+  // Updated Registration Logic
+  void registerUser() async {
+    String email = emailCtrl.text.trim().toLowerCase(); // Convert to lowercase
+    String username = userCtrl.text.trim();
+    String pass = passCtrl.text.trim();
+    String confirmPass = confirmPassCtrl.text.trim();
+
+    // 1. Check if fields are empty
+    if (email.isEmpty || pass.isEmpty || username.isEmpty) {
+      _showMsg('Please fill all fields', Colors.red);
+      return;
+    }
+
+    // 2. Check password match
+    if (pass != confirmPass) {
+      _showMsg('Passwords do not match!', Colors.red);
+      return;
+    }
+
+    // 3. Simple email format check
+    if (!email.contains('@')) {
+      _showMsg('Please enter a valid email', Colors.red);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Simulate a small delay for account creation
+    await Future.delayed(const Duration(seconds: 2));
+
+    // SAVE DATA TO THE GLOBAL STORE (Visible to Login Screen)
+    UserStore.savedEmail = email;
+    UserStore.savedPassword = pass;
+
+    if (!mounted) return;
+
+    _showMsg('Account Created Successfully!', Colors.green);
+
+    // Go back to login screen
+    Navigator.pop(context);
+  }
+
+  void _showMsg(String msg, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        backgroundColor: color,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -37,6 +88,7 @@ class _SignUpPageState extends State<SignUpPage> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
+          // Background Watermark
           Positioned(
             top: 280,
             left: 20,
@@ -44,63 +96,62 @@ class _SignUpPageState extends State<SignUpPage> {
             child: Opacity(
               opacity: 0.04,
               child: Image.asset(
-                'assets/work.png', // Verified in pubspec.yaml
+                'assets/work.png',
                 height: 400,
                 color: Colors.black,
-                colorBlendMode: BlendMode.srcIn,
               ),
             ),
           ),
           SingleChildScrollView(
             child: Column(
               children: [
-                const SizedBox(height: 80),
+                const SizedBox(height: 70),
+                // Hero Logo
                 Center(
-                  child: Image.asset(
-                    'assets/work.png',
-                    height: 120,
-                    width: 120,
-                    color: Colors.deepOrange,
+                  child: Hero(
+                    tag: 'logo',
+                    child: Image.asset(
+                      'assets/work.png',
+                      height: 110,
+                      width: 110,
+                      color: Colors.orange,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 40),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 30),
                   child: Column(
                     children: [
-                      // 2. PASSING CONTROLLERS CORRECTLY
-                      _buildSignUpField(
-                        "Email",
+                      _buildField(
+                        "Email Address",
                         Icons.email_outlined,
-                        _emailController,
+                        emailCtrl,
+                        TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 15),
-                      _buildSignUpField(
-                        "Username",
+                      _buildField(
+                        "Full Name",
                         Icons.person_outline,
-                        _usernameController,
+                        userCtrl,
+                        TextInputType.name,
                       ),
                       const SizedBox(height: 15),
-                      _buildPasswordField(
-                        hint: "Password",
-                        controller: _passwordController,
-                        isHidden: _isPasswordHidden,
-                        onToggle: () => setState(
-                          () => _isPasswordHidden = !_isPasswordHidden,
-                        ),
-                      ),
+                      _buildPassField("Password", _isPassHidden, passCtrl, () {
+                        setState(() => _isPassHidden = !_isPassHidden);
+                      }),
                       const SizedBox(height: 15),
-                      _buildPasswordField(
-                        hint: "Confirm Password",
-                        controller: _confirmPasswordController,
-                        isHidden: _isConfirmPasswordHidden,
-                        onToggle: () => setState(
-                          () => _isConfirmPasswordHidden =
-                              !_isConfirmPasswordHidden,
-                        ),
+                      _buildPassField(
+                        "Confirm Password",
+                        _isConfirmHidden,
+                        confirmPassCtrl,
+                        () {
+                          setState(() => _isConfirmHidden = !_isConfirmHidden);
+                        },
                       ),
                       const SizedBox(height: 40),
 
+                      // Submit Button with Loading State
                       SizedBox(
                         width: double.infinity,
                         height: 60,
@@ -112,17 +163,14 @@ class _SignUpPageState extends State<SignUpPage> {
                                   )
                                 : ElevatedButton(
                                     onPressed: () async {
-                                      final email = _emailController.text
+                                      final email = emailCtrl.text.trim();
+                                      final username = userCtrl.text.trim();
+                                      final password = passCtrl.text.trim();
+                                      final confirmPassword = confirmPassCtrl
+                                          .text
                                           .trim();
-                                      final username = _usernameController.text
-                                          .trim();
-                                      final password = _passwordController.text
-                                          .trim();
-                                      final confirmPassword =
-                                          _confirmPasswordController.text
-                                              .trim();
 
-                                      // ✅ VALIDATION
+                                      // validation
                                       if (email.isEmpty ||
                                           username.isEmpty ||
                                           password.isEmpty ||
@@ -154,16 +202,14 @@ class _SignUpPageState extends State<SignUpPage> {
                                         return;
                                       }
 
-                                      // ✅ CALL PROVIDER
-                                      await auth.signUp(
+                                      final success = await auth.signUp(
                                         context: context,
                                         email: email,
                                         password: password,
                                         name: username,
                                       );
 
-                                      // ✅ NAVIGATION
-                                      if (auth.userEmail != null) {
+                                      if (success) {
                                         Navigator.pushReplacement(
                                           context,
                                           MaterialPageRoute(
@@ -195,10 +241,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text(
-                            "Already have an Account? ",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
+                          const Text("Already have an account? "),
                           GestureDetector(
                             onTap: () => Navigator.pop(context),
                             child: const Text(
@@ -211,7 +254,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 30),
                     ],
                   ),
                 ),
@@ -223,39 +266,31 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  // 4. HELPER WIDGETS UPDATED TO REQUIRE CONTROLLERS
-  Widget _buildPasswordField({
-    required String hint,
-    required bool isHidden,
-    required VoidCallback onToggle,
-    required TextEditingController controller,
-  }) {
+  // UI Helpers
+  Widget _buildField(
+    String hint,
+    IconData icon,
+    TextEditingController ctrl,
+    TextInputType type,
+  ) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: TextField(
-        controller: controller, // Linked controller to avoid 'undefined' error
-        obscureText: isHidden,
-        style: const TextStyle(color: Colors.black),
+        controller: ctrl,
+        keyboardType: type,
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: const Icon(Icons.lock_outline, color: Colors.red),
-          suffixIcon: IconButton(
-            icon: Icon(
-              isHidden ? Icons.visibility_off : Icons.visibility,
-              color: Colors.grey,
-            ),
-            onPressed: onToggle,
-          ),
+          prefixIcon: Icon(icon, color: Colors.deepOrange),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             vertical: 20,
@@ -266,10 +301,11 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget _buildSignUpField(
+  Widget _buildPassField(
     String hint,
-    IconData icon,
-    TextEditingController controller,
+    bool isHidden,
+    TextEditingController ctrl,
+    VoidCallback toggle,
   ) {
     return Container(
       decoration: BoxDecoration(
@@ -277,18 +313,25 @@ class _SignUpPageState extends State<SignUpPage> {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: TextField(
-        controller: controller, // Linked controller to avoid 'undefined' error
-        style: const TextStyle(color: Colors.black),
+        controller: ctrl,
+        obscureText: isHidden,
         decoration: InputDecoration(
           hintText: hint,
-          prefixIcon: Icon(icon, color: Colors.red),
+          prefixIcon: const Icon(Icons.lock_outline, color: Colors.deepOrange),
+          suffixIcon: IconButton(
+            icon: Icon(
+              isHidden ? Icons.visibility_off : Icons.visibility,
+              color: Colors.grey,
+            ),
+            onPressed: toggle,
+          ),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(
             vertical: 20,
