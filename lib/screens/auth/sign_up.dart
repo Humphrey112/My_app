@@ -14,62 +14,52 @@ class SignUpPage extends StatefulWidget {
 class _SignUpPageState extends State<SignUpPage> {
   bool _isPassHidden = true;
   bool _isConfirmHidden = true;
-  bool _isLoading = false; // Added for a better user experience
+  bool _isLoading = false;
 
   final TextEditingController emailCtrl = TextEditingController();
-  final TextEditingController userCtrl = TextEditingController();
-  final TextEditingController passCtrl = TextEditingController();
+  final TextEditingController nameCtrl = TextEditingController();
+  final TextEditingController passwordCtrl = TextEditingController();
   final TextEditingController confirmPassCtrl = TextEditingController();
 
   @override
   void dispose() {
     emailCtrl.dispose();
-    userCtrl.dispose();
-    passCtrl.dispose();
+    nameCtrl.dispose();
+    passwordCtrl.dispose();
     confirmPassCtrl.dispose();
     super.dispose();
   }
 
   // Updated Registration Logic
-  void registerUser() async {
-    String email = emailCtrl.text.trim().toLowerCase(); // Convert to lowercase
-    String username = userCtrl.text.trim();
-    String pass = passCtrl.text.trim();
-    String confirmPass = confirmPassCtrl.text.trim();
+  void validateUser() async {
+    final email = emailCtrl.text.trim();
+    final username = nameCtrl.text.trim();
+    final password = passwordCtrl.text.trim();
+    final confirmPassword = confirmPassCtrl.text.trim();
 
-    // 1. Check if fields are empty
-    if (email.isEmpty || pass.isEmpty || username.isEmpty) {
-      _showMsg('Please fill all fields', Colors.red);
+    // validation
+    if (email.isEmpty ||
+        username.isEmpty ||
+        password.isEmpty ||
+        confirmPassword.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All fields are required!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
-    // 2. Check password match
-    if (pass != confirmPass) {
-      _showMsg('Passwords do not match!', Colors.red);
+    if (password != confirmPassword) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match!'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
-
-    // 3. Simple email format check
-    if (!email.contains('@')) {
-      _showMsg('Please enter a valid email', Colors.red);
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    // Simulate a small delay for account creation
-    await Future.delayed(const Duration(seconds: 2));
-
-    // SAVE DATA TO THE GLOBAL STORE (Visible to Login Screen)
-    UserStore.savedEmail = email;
-    UserStore.savedPassword = pass;
-
-    if (!mounted) return;
-
-    _showMsg('Account Created Successfully!', Colors.green);
-
-    // Go back to login screen
-    Navigator.pop(context);
   }
 
   void _showMsg(String msg, Color color) {
@@ -133,13 +123,18 @@ class _SignUpPageState extends State<SignUpPage> {
                       _buildField(
                         "Full Name",
                         Icons.person_outline,
-                        userCtrl,
+                        nameCtrl,
                         TextInputType.name,
                       ),
                       const SizedBox(height: 15),
-                      _buildPassField("Password", _isPassHidden, passCtrl, () {
-                        setState(() => _isPassHidden = !_isPassHidden);
-                      }),
+                      _buildPassField(
+                        "Password",
+                        _isPassHidden,
+                        passwordCtrl,
+                        () {
+                          setState(() => _isPassHidden = !_isPassHidden);
+                        },
+                      ),
                       const SizedBox(height: 15),
                       _buildPassField(
                         "Confirm Password",
@@ -163,50 +158,13 @@ class _SignUpPageState extends State<SignUpPage> {
                                   )
                                 : ElevatedButton(
                                     onPressed: () async {
-                                      final email = emailCtrl.text.trim();
-                                      final username = userCtrl.text.trim();
-                                      final password = passCtrl.text.trim();
-                                      final confirmPassword = confirmPassCtrl
-                                          .text
-                                          .trim();
-
-                                      // validation
-                                      if (email.isEmpty ||
-                                          username.isEmpty ||
-                                          password.isEmpty ||
-                                          confirmPassword.isEmpty) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'All fields are required!',
-                                            ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
-
-                                      if (password != confirmPassword) {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Passwords do not match!',
-                                            ),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                        return;
-                                      }
+                                      validateUser();
 
                                       final success = await auth.signUp(
                                         context: context,
-                                        email: email,
-                                        password: password,
-                                        name: username,
+                                        email: emailCtrl.text.trim(),
+                                        password: passwordCtrl.text.trim(),
+                                        name: nameCtrl.text.trim(),
                                       );
 
                                       if (success) {
