@@ -20,47 +20,79 @@ class NewsAuthProvider extends ChangeNotifier {
   }
 
   // SIGN UP
-  Future<bool> signUp({
-    required BuildContext context,
-    required String email,
-    required String password,
-    required String name,
-  }) async {
-    setLoading(true);
-    try {
-      final cred = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+Future<bool> signUp({
+  required BuildContext context,
+  required String email,
+  required String password,
+  required String name,
+}) async {
+  setLoading(true);
+  try {
+    final cred = await _auth.createUserWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-      await cred.user!.updateDisplayName(name);
+    await cred.user!.updateDisplayName(name);
 
-      _userName = name;
-      getStorageInstance.write('user_name', name);
+    _userName = name;
+    getStorageInstance.write('user_name', name);
 
-      await _saveToken();
+    // FIX: Calling the helper method defined below
+    await _saveToken();
 
-      showSnack(context, "Account created!!!");
-
-      return true; //success
-    } catch (e) {
-      showSnack(context, e.toString());
-      return false; //failure
-    } finally {
-      setLoading(false);
-    }
+    showSnack(context, "Account created!!!");
+    return true;
+  } catch (e) {
+    showSnack(context, e.toString());
+    return false;
+  } finally {
+    setLoading(false);
   }
+}
 
-  // SIGN IN
-  Future<User?> signIn(String email, String password) async {}
+// SIGN IN
+Future<bool> signIn({
+  required BuildContext context,
+  required String email,
+  required String password,
+}) async {
+  setLoading(true);
+  try {
+    final cred = await _auth.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
 
-  Future<void> _saveToken() async {
-    final token = await _auth.currentUser?.getIdToken();
+    if (cred.user?.displayName != null) {
+      _userName = cred.user!.displayName!;
+      getStorageInstance.write('user_name', _userName);
+    }
+    
+    // FIX: Calling the helper method defined below
+    await _saveToken();
+
+    showSnack(context, "Welcome back!");
+    return true;
+  } catch (e) {
+    showSnack(context, e.toString());
+    return false;
+  } finally {
+    setLoading(false);
+  }
+}
+
+// --- THE FIX: ADD THIS METHOD ---
+Future<void> _saveToken() async {
+  // Get the current user from Firebase
+  final user = _auth.currentUser;
+  if (user != null) {
+    // Force refresh the token and retrieve it
+    final token = await user.getIdToken();
+    // Save it to your storage instance
     getStorageInstance.write('token', token);
   }
-
-  String? get userEmail => _auth.currentUser?.email;
-
+}
   // LOGOUT
   Future<void> logout(BuildContext context) async {
     await _auth.signOut();

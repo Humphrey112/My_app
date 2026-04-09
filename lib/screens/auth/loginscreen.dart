@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:my_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
+// Make sure this path correctly points to your auth_provider.dart file
 import '../new_category.dart';
 import 'sign_up.dart';
-
-// This class stores the user info globally during the app session.
-class UserStore {
-  static String savedEmail = "";
-  static String savedPassword = ""; 
-}
 
 class Loginscreen extends StatefulWidget {
   const Loginscreen({super.key});
@@ -30,15 +27,13 @@ class _LoginscreenState extends State<Loginscreen> {
   }
 
   void tryLogin() async {
-    String inputEmail = emailController.text.trim().toLowerCase();
+    // 1. Access the NewsAuthProvider you defined in main.dart
+    final authService = Provider.of<NewsAuthProvider>(context, listen: false);
+
+    String inputEmail = emailController.text.trim();
     String inputPass = passwordController.text.trim();
 
-    // 1. Check if an account has been created yet
-    if (UserStore.savedEmail.isEmpty || UserStore.savedPassword.isEmpty) {
-      showError("No account found. Please Register first!");
-      return;
-    }
-
+    // 2. Local Validation
     if (inputEmail.isEmpty || inputPass.isEmpty) {
       showError("Please fill in both fields");
       return;
@@ -46,27 +41,30 @@ class _LoginscreenState extends State<Loginscreen> {
 
     setState(() => _isLoading = true);
 
-    // Simulate a quick network check delay
-    await Future.delayed(const Duration(milliseconds: 800));
+    // 3. Call your Firebase signIn method
+    // This talks to Firebase directly, solving the "No account found" issue
+    bool success = await authService.signIn(
+      context: context,
+      email: inputEmail,
+      password: inputPass,
+    );
 
-    setState(() => _isLoading = false);
+    if (mounted) setState(() => _isLoading = false);
 
-    // 2. Check against the UserStore values set during Registration
-    if (inputEmail == UserStore.savedEmail && inputPass == UserStore.savedPassword) {
+    // 4. Navigate if login was successful
+    if (success) {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const NewsCategoryScreen()),
       );
-    } else {
-      showError("Incorrect email or password. Please try again.");
     }
   }
 
   void showError(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(msg), 
+        content: Text(msg),
         backgroundColor: Colors.red,
         behavior: SnackBarBehavior.floating,
       ),
@@ -98,7 +96,13 @@ class _LoginscreenState extends State<Loginscreen> {
               child: Center(
                 child: Hero(
                   tag: 'logo',
-                  child: Image.asset('assets/work.png', height: 120, width: 120),
+                  child: Image.asset(
+                    'assets/work.png', 
+                    height: 120, 
+                    width: 120,
+                    errorBuilder: (context, error, stackTrace) => 
+                      const Icon(Icons.lock_person, size: 80, color: Colors.white),
+                  ),
                 ),
               ),
             ),
@@ -106,6 +110,7 @@ class _LoginscreenState extends State<Loginscreen> {
               padding: const EdgeInsets.symmetric(horizontal: 30),
               child: Column(
                 children: [
+                  const SizedBox(height: 40),
                   _buildInput(
                     label: "Email",
                     icon: Icons.email_outlined,
@@ -119,7 +124,9 @@ class _LoginscreenState extends State<Loginscreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        // Logic for Forgot Password can go here
+                      },
                       child: const Text(
                         "Forgot Password?",
                         style: TextStyle(color: Color(0xFFFF4500), fontWeight: FontWeight.bold),
@@ -184,6 +191,7 @@ class _LoginscreenState extends State<Loginscreen> {
     );
   }
 
+  // --- UI Helpers (Keep these outside build to keep code clean) ---
   Widget _buildInput({required String label, required IconData icon, required TextEditingController ctrl, TextInputType? type}) {
     return Container(
       decoration: BoxDecoration(
