@@ -4,14 +4,18 @@ import 'package:my_app/firebase_options.dart';
 import 'package:provider/provider.dart';
 
 import 'providers/auth_provider.dart';
+import 'providers/news_provider.dart';
 import 'screens/Onboarding.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => NewsAuthProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => NewsAuthProvider()),
+        ChangeNotifierProvider(create: (_) => NewsProvider()),
+      ],
       child: const MyApp(),
     ),
   );

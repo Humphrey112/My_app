@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:my_app/providers/news_provider.dart';
+import 'package:provider/provider.dart';
+
+class NewsArticle {
+  final String imageUrl;
+  final String title;
+  final String timestamp;
+
+  NewsArticle({
+    required this.imageUrl,
+    required this.title,
+    required this.timestamp,
+  });
+}
+
+class EconomyNewsPage extends StatefulWidget {
+  const EconomyNewsPage({super.key});
+
+  @override
+  State<EconomyNewsPage> createState() => _EconomyNewsPageState();
+}
+
+class _EconomyNewsPageState extends State<EconomyNewsPage> {
+  @override
+  void initState() {
+    super.initState();
+    Provider.of<NewsProvider>(context, listen: false).fetchEconomyNews();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          "Economy News",
+          style: TextStyle(
+            color: Colors.red,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: Consumer<NewsProvider>(
+        builder: (context, provider, widget) {
+          if (provider.stillFetching) {
+            return Center(child: CircularProgressIndicator());
+          }
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // Header Image
+                Stack(
+                  children: [
+                    Image.asset(
+                      'assets/img1.jpeg',
+                      width: double.infinity,
+                      height: 260,
+                      fit: BoxFit.cover,
+                    ),
+                    Container(
+                      height: 260,
+                      color: const Color.fromARGB(24, 33, 149, 243),
+                    ),
+                    const Positioned(
+                      bottom: 20,
+                      left: 15,
+                      right: 15,
+                      child: Text(
+                        "Come sta andando l'economia dei content creator?",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // The News List
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: provider.economyNewsList.length,
+                  itemBuilder: (context, index) {
+                    final article = provider.economyNewsList[index];
+                    // InkWell makes the item "Pressable"
+                    return InkWell(
+                      onTap: () {
+                        // This is where the code goes when you press it
+                        print("You pressed: ${article.title}");
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: Image.network(
+                                article.urlToImage ?? '',
+                                width: 110,
+                                height: 110,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    article.title ?? '',
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange,
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "ECONOMY",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      Text(
+                                        article.source?.name ?? '',
+                                        style: const TextStyle(
+                                          fontSize: 10,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}

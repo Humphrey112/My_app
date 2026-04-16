@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'auth/loginscreen.dart'; 
+import 'package:my_app/providers/news_provider.dart';
+import 'package:provider/provider.dart';
+import 'auth/loginscreen.dart';
 // Make sure you import this
-import 'auth/economyscreen.dart';
+import 'economyscreen.dart';
 
 class NewsCategoryScreen extends StatefulWidget {
   const NewsCategoryScreen({super.key});
@@ -11,7 +13,6 @@ class NewsCategoryScreen extends StatefulWidget {
 }
 
 class _NewsCategoryScreenState extends State<NewsCategoryScreen> {
-  
   @override
   void initState() {
     super.initState();
@@ -19,10 +20,12 @@ class _NewsCategoryScreenState extends State<NewsCategoryScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Login Successful!', style: TextStyle(fontSize: 16)),
-          backgroundColor: Color(0xFF1B8E3D), 
+          backgroundColor: Color(0xFF1B8E3D),
           duration: Duration(seconds: 2),
         ),
       );
+
+      Provider.of<NewsProvider>(context, listen: false).fetchAllNewsData();
     });
   }
 
@@ -66,7 +69,9 @@ class _NewsCategoryScreenState extends State<NewsCategoryScreen> {
                         onTap: () {
                           Navigator.pushReplacement(
                             context,
-                            MaterialPageRoute(builder: (context) => const Loginscreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const Loginscreen(),
+                            ),
                           );
                         },
                         child: Icon(Icons.logout, color: Colors.grey[600]),
@@ -84,13 +89,13 @@ class _NewsCategoryScreenState extends State<NewsCategoryScreen> {
                   crossAxisCount: 3,
                   crossAxisSpacing: 8,
                   mainAxisSpacing: 8,
-                  childAspectRatio: 0.65, 
+                  childAspectRatio: 0.65,
                 ),
                 itemCount: categories.length,
                 itemBuilder: (context, index) {
                   final String title = categories[index]['title'] ?? 'No Title';
                   final String image = categories[index]['image'] ?? '';
-                  
+
                   return categoryBox(title, image);
                 },
               ),
